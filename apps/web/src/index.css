@@ -1,0 +1,106 @@
+@import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;1,300;1,400&family=Jost:wght@300;400;500;600&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+body {
+  font-family: "Jost", ui-sans-serif, system-ui, sans-serif;
+  overflow-x: clip;
+  background-color: hsl(var(--background));
+  color: hsl(var(--foreground));
+}
+
+@layer base {
+  :root {
+    /* warm ivory / charcoal / muted taupe / restrained terracotta accent */
+    --background: 40 33% 96%;
+    --foreground: 30 8% 15%;
+    --card: 40 40% 98%;
+    --card-foreground: 30 8% 15%;
+    --popover: 40 40% 98%;
+    --popover-foreground: 30 8% 15%;
+    --primary: 30 8% 15%;
+    --primary-foreground: 40 33% 96%;
+    --secondary: 34 18% 90%;
+    --secondary-foreground: 30 8% 20%;
+    --muted: 34 16% 91%;
+    --muted-foreground: 28 7% 42%;
+    --accent: 18 42% 46%;
+    --accent-foreground: 40 33% 97%;
+    --taupe: 30 12% 62%;
+    --destructive: 4 60% 44%;
+    --destructive-foreground: 40 33% 97%;
+    --border: 33 16% 85%;
+    --input: 33 16% 85%;
+    --ring: 18 42% 46%;
+    --radius: 0.125rem;
+    --sidebar-background: 40 33% 96%;
+    --sidebar-foreground: 30 8% 15%;
+    --sidebar-primary: 30 8% 15%;
+    --sidebar-primary-foreground: 40 33% 96%;
+    --sidebar-accent: 34 18% 90%;
+    --sidebar-accent-foreground: 30 8% 20%;
+    --sidebar-border: 33 16% 85%;
+    --sidebar-ring: 18 42% 46%;
+  }
+  .dark {
+    --background: 30 8% 11%;
+    --foreground: 40 30% 94%;
+    --card: 30 8% 14%;
+    --card-foreground: 40 30% 94%;
+    --popover: 30 8% 14%;
+    --popover-foreground: 40 30% 94%;
+    --primary: 40 30% 94%;
+    --primary-foreground: 30 8% 11%;
+    --secondary: 30 6% 20%;
+    --secondary-foreground: 40 30% 94%;
+    --muted: 30 6% 20%;
+    --muted-foreground: 33 10% 65%;
+    --accent: 18 46% 54%;
+    --accent-foreground: 30 8% 11%;
+    --taupe: 30 10% 55%;
+    --destructive: 4 60% 44%;
+    --destructive-foreground: 40 30% 94%;
+    --border: 30 6% 24%;
+    --input: 30 6% 24%;
+    --ring: 18 46% 54%;
+  }
+}
+
+@layer base {
+  * {
+    border-color: hsl(var(--border));
+  }
+  ::selection {
+    background: hsl(var(--accent) / 0.2);
+  }
+}
+
+@layer components {
+  .font-display {
+    font-family: "Cormorant Garamond", ui-serif, Georgia, serif;
+  }
+  .eyebrow {
+    font-size: 0.7rem;
+    letter-spacing: 0.22em;
+    text-transform: uppercase;
+    font-weight: 500;
+  }
+  .rule-accent {
+    background-image: linear-gradient(to right, hsl(var(--accent)), hsl(var(--accent) / 0));
+  }
+}
+
+.marquee-track {
+  animation: marquee 38s linear infinite;
+}
+
+@keyframes marquee {
+  from { transform: translate3d(0, 0, 0); }
+  to { transform: translate3d(-50%, 0, 0); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .marquee-track { animation: none; }
+}

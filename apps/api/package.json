@@ -1,0 +1,17 @@
+{
+  "name": "samira-art-api",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "node --watch server.js",
+    "start": "node server.js",
+    "db:init": "node init-db.js",
+    "sync:products": "node sync-products.js"
+  },
+  "dependencies": {
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.7",
+    "express": "^5.1.0",
+    "pg": "^8.23.0"
+  }
+}
