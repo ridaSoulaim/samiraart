@@ -13,6 +13,7 @@ import {
   loginAdminApi,
   logoutAdminApi,
   updateAdminProduct,
+  uploadAdminImage,
 } from '@/api/AdminApi';
 
 export function ProtectedAdminRoute() {
@@ -95,6 +96,7 @@ function AdminPage() {
   const [form, setForm] = useState(emptyForm());
   const [editingId, setEditingId] = useState(null);
   const [notice, setNotice] = useState('');
+  const [uploading, setUploading] = useState(false);
 
   useEffect(() => {
     if (!authenticated) {
@@ -293,9 +295,9 @@ function AdminPage() {
                 <input
                   type="number"
                   min="0"
-                  step="100"
-                  value={Math.round((form.price_in_cents || form.variants?.[0]?.price_in_cents || 0) / 100)}
-                  onChange={(event) => handleFormChange('price_in_cents', Number(event.target.value) * 100)}
+                  step="any"
+                  value={(form.price_in_cents || form.variants?.[0]?.price_in_cents || 0) / 100}
+                  onChange={(event) => handleFormChange('price_in_cents', Math.round(Number(event.target.value) * 100))}
                   className="mt-2 w-full border border-border bg-background px-3 py-2 outline-none focus:border-accent"
                 />
               </label>
@@ -312,12 +314,42 @@ function AdminPage() {
               </label>
 
               <label className="block text-sm text-muted-foreground sm:col-span-2">
-                Image URL
-                <input
-                  value={form.image || ''}
-                  onChange={(event) => handleFormChange('image', event.target.value)}
-                  className="mt-2 w-full border border-border bg-background px-3 py-2 outline-none focus:border-accent"
-                />
+                Image
+                <div className="mt-2 flex flex-col gap-2">
+                  {/* File picker button */}
+                  <label className="flex cursor-pointer items-center gap-3 border border-dashed border-border bg-background px-4 py-3 hover:border-accent transition-colors">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                      <polyline points="17 8 12 3 7 8"/>
+                      <line x1="12" y1="3" x2="12" y2="15"/>
+                    </svg>
+                    <span className="text-xs uppercase tracking-[0.14em] text-muted-foreground">
+                      {uploading ? 'Uploading...' : 'Choose file from device'}
+                    </span>
+                    <input
+                      type="file"
+                      accept="image/*"
+                      className="hidden"
+                      disabled={uploading}
+                      onChange={async (event) => {
+                        const file = event.target.files?.[0];
+                        if (!file) return;
+                        setUploading(true);
+                        setNotice('Uploading image...');
+                        try {
+                          const url = await uploadAdminImage(file);
+                          handleFormChange('image', url);
+                          setNotice('Image uploaded successfully.');
+                        } catch (error) {
+                          setNotice(`Upload failed: ${error.message}`);
+                        } finally {
+                          setUploading(false);
+                          event.target.value = '';
+                        }
+                      }}
+                    />
+                  </label>
+                </div>
               </label>
 
               {form.image && (

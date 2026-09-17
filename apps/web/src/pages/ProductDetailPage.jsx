@@ -34,70 +34,82 @@ function ProductDetailPage() {
 
   useEffect(() => {
     let active = true;
-    const localProducts = readAdminProductsIfAny();
-    const localMatch = localProducts.find((product) => product.id === id);
 
-    const loadDatabaseProduct = async () => {
-      const databaseProducts = await getAdminProducts();
-      return databaseProducts.find((product) => product.id === id) || null;
-    };
-
-    const loadLocalOrDatabase = async () => {
-      const databaseMatch = await loadDatabaseProduct().catch(() => null);
-      return databaseMatch || localMatch;
-    };
-
-    loadLocalOrDatabase().then((databaseOrLocalMatch) => {
-    if (databaseOrLocalMatch) {
-      const normalized = {
-        ...databaseOrLocalMatch,
-        id: databaseOrLocalMatch.id,
-        title: databaseOrLocalMatch.title,
-        subtitle: databaseOrLocalMatch.subtitle,
-        ribbon_text: databaseOrLocalMatch.ribbon_text,
-        description: databaseOrLocalMatch.description,
-        image: databaseOrLocalMatch.image || databaseOrLocalMatch.images?.[0]?.url || '',
-        price_in_cents: Number(databaseOrLocalMatch.price_in_cents ?? databaseOrLocalMatch.variants?.[0]?.price_in_cents ?? 0),
-        currency: databaseOrLocalMatch.currency || 'MAD',
-        purchasable: databaseOrLocalMatch.purchasable !== false,
-        order: Number(databaseOrLocalMatch.order ?? 0),
-        images: Array.isArray(databaseOrLocalMatch.images) && databaseOrLocalMatch.images.length ? databaseOrLocalMatch.images : (databaseOrLocalMatch.image ? [{ url: databaseOrLocalMatch.image, order: 0, type: 'main' }] : []),
-        variants: Array.isArray(databaseOrLocalMatch.variants) && databaseOrLocalMatch.variants.length ? databaseOrLocalMatch.variants.map((variant) => ({
-          ...variant,
-          price_in_cents: Number(variant.price_in_cents ?? databaseOrLocalMatch.price_in_cents ?? 0),
-          inventory_quantity: Number(variant.inventory_quantity ?? 1),
-          image_url: variant.image_url || databaseOrLocalMatch.image || '',
-        })) : [{
-          id: `${databaseOrLocalMatch.id}-default`,
-          title: 'Default',
-          image_url: databaseOrLocalMatch.image || '',
-          sku: '',
-          price_in_cents: Number(databaseOrLocalMatch.price_in_cents ?? 0),
-          sale_price_in_cents: null,
-          currency: localMatch.currency || 'MAD',
-          currency_info: { code: 'MAD', symbol: 'MAD ', template: '$1', decimal_digits: 2 },
-          price_formatted: 'MAD 0.00',
-          sale_price_formatted: null,
-          manage_inventory: true,
-          inventory_quantity: 1,
-          weight: null,
-          options: [],
-        }],
-      };
-      if (!active) return;
-      setProduct(normalized);
-      setSelectedVariant(normalized.variants?.[0] || null);
-      setImageIndex(0);
-      setLoading(false);
-      setError(null);
-      return;
-    }
-    }).catch(() => {});
-
-    const run = async () => {
+    const loadProduct = async () => {
       try {
         setLoading(true);
         setError(null);
+
+        // 1. Try admin / database products first
+        let adminMatch = null;
+        try {
+          const databaseProducts = await getAdminProducts();
+          adminMatch = databaseProducts.find((p) => p.id === id) || null;
+        } catch {
+          // database unavailable – fall through
+        }
+        if (!adminMatch) {
+          const localProducts = readAdminProductsIfAny();
+          adminMatch = localProducts.find((p) => p.id === id) || null;
+        }
+
+        if (adminMatch) {
+          const normalized = {
+            ...adminMatch,
+            id: adminMatch.id,
+            title: adminMatch.title,
+            subtitle: adminMatch.subtitle,
+            ribbon_text: adminMatch.ribbon_text,
+            description: adminMatch.description,
+            image: adminMatch.image || adminMatch.images?.[0]?.url || '',
+            price_in_cents: Number(adminMatch.price_in_cents ?? adminMatch.variants?.[0]?.price_in_cents ?? 0),
+            currency: adminMatch.currency || 'MAD',
+            purchasable: adminMatch.purchasable !== false,
+            order: Number(adminMatch.order ?? 0),
+            images: Array.isArray(adminMatch.images) && adminMatch.images.length
+              ? adminMatch.images
+              : adminMatch.image ? [{ url: adminMatch.image, order: 0, type: 'main' }] : [],
+            variants: Array.isArray(adminMatch.variants) && adminMatch.variants.length
+              ? adminMatch.variants.map((variant) => {
+                  const price = Number(variant.price_in_cents ?? adminMatch.price_in_cents ?? 0);
+                  return {
+                    ...variant,
+                    price_in_cents: price,
+                    price_formatted: variant.price_formatted || `MAD ${(price / 100).toFixed(2)}`,
+                    inventory_quantity: Number(variant.inventory_quantity ?? 1),
+                    image_url: variant.image_url || adminMatch.image || '',
+                  };
+                })
+              : (() => {
+                  const fallbackPrice = Number(adminMatch.price_in_cents ?? 0);
+                  return [{
+                    id: `${adminMatch.id}-default`,
+                    title: 'Default',
+                    image_url: adminMatch.image || '',
+                    sku: '',
+                    price_in_cents: fallbackPrice,
+                    sale_price_in_cents: null,
+                    currency: adminMatch.currency || 'MAD',
+                    currency_info: { code: 'MAD', symbol: 'MAD ', template: '$1', decimal_digits: 2 },
+                    price_formatted: `MAD ${(fallbackPrice / 100).toFixed(2)}`,
+                    sale_price_formatted: null,
+                    manage_inventory: true,
+                    inventory_quantity: 1,
+                    weight: null,
+                    options: [],
+                  }];
+                })(),
+          };
+          if (!active) return;
+          setProduct(normalized);
+          setSelectedVariant(normalized.variants?.[0] || null);
+          setImageIndex(0);
+          setLoading(false);
+          setError(null);
+          return;
+        }
+
+        // 2. Fall back to the ecommerce API
         const fetched = await getProduct(id);
         const quantities = await getProductQuantities({
           fields: 'inventory_quantity',
@@ -121,7 +133,8 @@ function ProductDetailPage() {
         if (active) setLoading(false);
       }
     };
-    run();
+
+    loadProduct();
     return () => { active = false; };
   }, [id]);
 

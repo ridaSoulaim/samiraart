@@ -44,3 +44,18 @@ export const updateAdminProduct = async (id, product) => request(`/api/products/
 export const deleteAdminProduct = async (id) => request(`/api/products/${encodeURIComponent(id)}`, {
   method: 'DELETE',
 });
+
+export const uploadAdminImage = async (file) => {
+  const formData = new FormData();
+  formData.append('image', file);
+  const response = await fetch('/api/admin/upload', {
+    method: 'POST',
+    headers: {
+      ...(getAdminToken() ? { Authorization: `Bearer ${getAdminToken()}` } : {}),
+    },
+    body: formData,
+  });
+  const body = await response.json();
+  if (!response.ok) throw new Error(body?.error || 'Upload failed');
+  return body.url;
+};

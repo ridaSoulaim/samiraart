@@ -7,6 +7,8 @@ import { SITE } from '@/data/site';
 
 const matchesCategory = (product, id) => {
   if (id === 'all') return true;
+  const typeValue = (product.type?.value || '').toLowerCase();
+  if (typeValue === id) return true;
   const title = (product.title || '').toLowerCase();
   if (id === 'embroideries') return /embroider|broder/.test(title);
   if (id === 'pearl-bracelets') return /pearl|bracelet|perle/.test(title);

@@ -37,12 +37,16 @@ export const useStoreProducts = () => {
         additional_info: Array.isArray(product.additional_info) ? product.additional_info : [],
         collections: Array.isArray(product.collections) ? product.collections : [],
         options: Array.isArray(product.options) ? product.options : [],
-        variants: Array.isArray(product.variants) && product.variants.length ? product.variants.map((variant) => ({
-          ...variant,
-          inventory_quantity: Number(variant.inventory_quantity ?? 1),
-          price_in_cents: Number(variant.price_in_cents ?? product.price_in_cents ?? 0),
-          image_url: variant.image_url || product.image || '',
-        })) : [{
+        variants: Array.isArray(product.variants) && product.variants.length ? product.variants.map((variant) => {
+          const price = Number(variant.price_in_cents ?? product.price_in_cents ?? 0);
+          return {
+            ...variant,
+            inventory_quantity: Number(variant.inventory_quantity ?? 1),
+            price_in_cents: price,
+            price_formatted: variant.price_formatted || `MAD ${(price / 100).toFixed(2)}`,
+            image_url: variant.image_url || product.image || '',
+          };
+        }) : [{
           id: `${product.id}-default`,
           title: 'Default',
           image_url: product.image || '',

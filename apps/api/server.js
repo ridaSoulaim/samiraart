@@ -1,11 +1,36 @@
 import crypto from 'node:crypto';
+import path from 'node:path';
+import { mkdirSync } from 'node:fs';
+import { fileURLToPath } from 'node:url';
 import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
 import pg from 'pg';
+import multer from 'multer';
 const { Pool } = pg;
 
 dotenv.config();
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+const uploadsDir = path.resolve(__dirname, '../web/public/uploads');
+mkdirSync(uploadsDir, { recursive: true });
+
+const storage = multer.diskStorage({
+  destination: (_req, _file, cb) => cb(null, uploadsDir),
+  filename: (_req, file, cb) => {
+    const ext = path.extname(file.originalname).toLowerCase();
+    cb(null, `${crypto.randomBytes(12).toString('hex')}${ext}`);
+  },
+});
+
+const upload = multer({
+  storage,
+  limits: { fileSize: 10 * 1024 * 1024 }, // 10 MB max
+  fileFilter: (_req, file, cb) => {
+    if (/^image\//i.test(file.mimetype)) return cb(null, true);
+    cb(new Error('Only image files are allowed'));
+  },
+});
 
 const app = express();
 const port = Number(process.env.PORT || 4000);
@@ -83,6 +108,12 @@ app.post('/api/admin/login', (request, response) => {
     return response.status(401).json({ error: 'Invalid credentials' });
   }
   return response.json({ token: signToken(username), username });
+});
+
+app.post('/api/admin/upload', requireAdmin, upload.single('image'), (request, response) => {
+  if (!request.file) return response.status(400).json({ error: 'No image file provided' });
+  const url = `/uploads/${request.file.filename}`;
+  return response.json({ url });
 });
 
 app.get('/api/products', async (_request, response) => {

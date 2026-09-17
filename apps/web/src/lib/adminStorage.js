@@ -214,6 +214,11 @@ export const createEmptyAdminProduct = () => ({
   options: [],
 });
 
+const formatAdminPrice = (cents) => {
+  const value = Number(cents || 0);
+  return `MAD ${(value / 100).toFixed(2)}`;
+};
+
 export const normalizeAdminProduct = (input) => {
   const base = createEmptyAdminProduct();
   const parsed = input || {};
@@ -223,6 +228,9 @@ export const normalizeAdminProduct = (input) => {
     : base.variants[0];
 
   const safeImage = parsed.image || parsed.images?.[0]?.url || variant.image_url || '';
+  const productPrice = Number(parsed.price_in_cents ?? variant.price_in_cents ?? 0);
+  const variantPrice = Number(variant.price_in_cents ?? parsed.price_in_cents ?? 0);
+  const salePrice = variant.sale_price_in_cents ?? null;
 
   return {
     ...base,
@@ -233,7 +241,7 @@ export const normalizeAdminProduct = (input) => {
     ribbon_text: parsed.ribbon_text || '',
     description: parsed.description || '<p>Describe this piece...</p>',
     image: safeImage,
-    price_in_cents: Number(parsed.price_in_cents ?? variant.price_in_cents ?? 0),
+    price_in_cents: productPrice,
     currency: parsed.currency || 'MAD',
     purchasable: parsed.purchasable !== false,
     order: Number(parsed.order ?? 1),
@@ -245,12 +253,12 @@ export const normalizeAdminProduct = (input) => {
         title: variant.title || 'Default',
         image_url: safeImage,
         sku: variant.sku || '',
-        price_in_cents: Number(variant.price_in_cents ?? parsed.price_in_cents ?? 0),
-        sale_price_in_cents: variant.sale_price_in_cents ?? null,
+        price_in_cents: variantPrice,
+        sale_price_in_cents: salePrice,
         currency: variant.currency || parsed.currency || 'MAD',
         currency_info: variant.currency_info || { code: 'MAD', symbol: 'MAD ', template: '$1', decimal_digits: 2 },
-        price_formatted: variant.price_formatted || 'MAD 0.00',
-        sale_price_formatted: variant.sale_price_formatted ?? null,
+        price_formatted: formatAdminPrice(variantPrice),
+        sale_price_formatted: salePrice ? formatAdminPrice(salePrice) : null,
         manage_inventory: variant.manage_inventory !== false,
         inventory_quantity: Number(variant.inventory_quantity ?? 1),
         weight: variant.weight ?? null,
